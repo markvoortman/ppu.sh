@@ -7,9 +7,15 @@ set -e
 # (done) Check if jails dataset exists; quit if doesn't exist
 # (done) Check if username exits
 # (done) Two different log files; list of all jails; list of all changes to the jails [year/month/day:hour:min:sec]
-# (done-ish) Delete operation
+# (done) Delete operation
 # (done) List jails
+# 2 spaces for indentation
+# test create and delete jail in same statement; generate random student
+# make everything a separate function
+# print errors to error stream &2 echo "# - error" exit #
 # Change password
+# get ip from log instead of ping
+# create configuration file ppu.conf
 
 #Pool name
 poolname=zroot
@@ -76,28 +82,18 @@ elif [ $1 = "deletejail" ]
 		#Get jail IP
 		ip=`cat /usr/jails/jaillist.txt | grep $username | awk '{print $2}'`
 
-		#Stop jail, remove it, unmount dataset, remove it
+		#Stop jail, remove it, unmount dataset, remove it, remove remaining directory
 		qjail stop $username
-		echo jail stop
-		sleep 2
 		qjail delete $username
-		echo jail delete
-		sleep 2
 		zfs unmount -f /usr/jails/$username #doesn't work without -f?
-		echo data set unmount
-		sleep 2
 		zfs destroy $poolname/jails/$username
-		echo destroy dataset
-		sleep 2
-		echo remove directory
 		rmdir /usr/jails/$username
 		
 		#Update list of all jails
-		#sed -i '' '/pizza3001/ d' /usr/jails/jaillist.txt
-		sed -i '' '/'$username'/ d' /usr/jails/jaillist.txt #works individually but not in script?
+		sed -i '' '/'$username'/ d' /usr/jails/jaillist.txt
 		
 		#Log action DELETE action
-		echo `date +"[%y/%m/%d:%I:%M:%S]"` DELETE $ip `who | awk '{print $1}'` >> /usr/jails/jaillog.txt
+		echo `date +"[%y/%m/%d:%I:%M:%S]"` DELETE $username $ip `who -m | awk '{print $1}'` >> /usr/jails/jaillog.txt
 
 #List all jails created with script
 elif [ $1 = "list" ]
@@ -109,16 +105,9 @@ elif [ $1 = "log" ]
 	then
 		cat /usr/jails/jaillog.txt
 
-#Test Case; ignore
+#Create a jail for random student; delete the jail
 elif [ $1 = "test" ]
 	then
-		test=$2
-		#Check if username exists
-		if [ -d "$test" ] 
-		then
-			echo This directory exists
-		else
-			echo this directory doesnt exist
-		fi
+		NEW_UUID=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+		./ppu.sh createjail 
 fi
-
