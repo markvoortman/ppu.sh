@@ -11,8 +11,8 @@ location=`cat ppu.conf | grep location | sed "s|location=||g"`
 # Script parameters
 action=$1
 username=$2
-list=$location"jaillist.txt"
-log=$location"jaillog.txt"
+list=$location/jaillist.txt
+log=$location/jaillog.txt
 
 createjail() {
   #Check if jails dataset doesn't exist; end if it doesn't
@@ -37,8 +37,8 @@ createjail() {
   fi
 	
 	#Create dataset for each username/jail; mount to jails location
-	zfs create $dataset$username
-	zfs set mountpoint=$location$username $dataset$username
+	zfs create $dataset/$username
+	zfs set mountpoint=$location/$username $dataset/$username
 	ipfind=1
   
 	#Check each IP in log file, exit if at end value, make new jail for unused value 
@@ -85,9 +85,9 @@ deletejail() {
   #Stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
   qjail delete $username
-  zfs unmount -f $location$username
-  zfs destroy $dataset$username
-  rmdir $location$username
+  zfs unmount -f $location/$username
+  zfs destroy $dataset/$username
+  rmdir $location/$username
   
   #Update list of all jails
   sed -i '' '/'$username'/ d' $list

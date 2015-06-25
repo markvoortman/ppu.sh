@@ -1,0 +1,4 @@
+dataset=zroot/jails
+ipstart=167.88.242.51
+ipend=167.88.242.70
+location=/usr/jails

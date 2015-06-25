@@ -47,7 +47,7 @@ Create a jail with a random 16 character string and immediately delete a jail. F
 ## Configuration File
 
 ```
-dataset=[datapool]/jails
+dataset=[zpool]/jails
 ```
 
 Location of the dataset that will house the jails. [datapool] is the name of the datapool that will contain said dataset.
