@@ -1,21 +1,18 @@
 #!/bin/sh
 set -e
 
-# ppu.sh
-# By: Faiz Ali
-# ali.faiz019@gmail.com
-
 # Parameters from ppu.conf
-poolname=`cat ppu.conf | grep poolname | sed "s|poolname=||g"`
-ipaddress=`cat ppu.conf | grep ipaddress | sed "s|ipaddress=||g"`
-iptest=`cat ppu.conf | grep ipteststart | sed "s|ipteststart=||g"`
+dataset=`cat ppu.conf | grep dataset | sed "s|dataset=||g"`
+ipaddress=`cat ppu.conf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f1-3`
+iptest=`cat ppu.conf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f4`
+ipend=`cat ppu.conf | grep ipend | sed "s|ipend=||g" | cut -d "." -f4`
 location=`cat ppu.conf | grep location | sed "s|location=||g"`
 
 # Script parameters
 action=$1
 username=$2
-list=$location/jaillist.txt
-log=$location/jaillog.txt
+list=$location"jaillist.txt"
+log=$location"jaillog.txt"
 
 createjail() {
   #Check if jails dataset doesn't exist; end if it doesn't
@@ -31,16 +28,28 @@ createjail() {
       echo "2 - A jail for $username already exists" 1>&2
       exit 2
 	fi
+  
+  #Check if at end of IP usable range
+  if [ $ipend = $iptest ] 
+    then
+      echo "4 - Jail not created; IP end range reached." 1>&2
+      exit 4
+  fi
 	
 	#Create dataset for each username/jail; mount to jails location
-	zfs create $poolname/jails/$username
-	zfs set mountpoint=$location/$username $poolname/jails/$username
+	zfs create $dataset$username
+	zfs set mountpoint=$location$username $dataset$username
 	ipfind=1
   
-	#Check each IP for ping response, if no response IP is not being used
+	#Check each IP in log file, exit if at end value, make new jail for unused value 
 	while [ $ipfind -eq 1 ]
 	do 
-    check=`grep $ipaddress$iptest $list || true`    
+    if [ $ipend = $iptest ] 
+      then
+        echo "4 - Jail not created; IP end range reached." 1>&2
+        exit 4
+    fi
+    check=`grep $ipaddress.$iptest $list || true`    
 		if [ -n "$check" ]
     then	
 			iptest=`expr $iptest + 1` 
@@ -50,19 +59,19 @@ createjail() {
 	done
   
 	#Create a jail with username/password $username and ask to change password on logging in
-	qjail create -c -4 $ipaddress$iptest $username
+	qjail create -c -4 $ipaddress.$iptest $username
 	
 	#Log list of all created and active jails 
-	echo $username $ipaddress$iptest host$iptest.cmps.pointpark.edu >> $list
+	echo $username $ipaddress.$iptest host$iptest.cmps.pointpark.edu >> $list
 	
 	#Log action CREATE taken on a jail
-	echo `date +"[%y/%m/%d:%I:%M:%S]"` CREATE $username $ipaddress$iptest `who | awk '{print $1}'` >> $log
+	echo `date +"[%y/%m/%d:%I:%M:%S]"` CREATE $username $ipaddress.$iptest `who | awk '{print $1}'` >> $log
 
 	#Start jail
 	qjail start $username
 }
 
- deletejail() {
+deletejail() {
   #Check if username exists; end if it doesn't
   if [ ! -d "$location/$username" ] 
     then
@@ -76,9 +85,9 @@ createjail() {
   #Stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
   qjail delete $username
-  zfs unmount -f $location/$username #doesn't work without -f?
-  zfs destroy $poolname/jails/$username
-  rmdir $location/$username
+  zfs unmount -f $location$username
+  zfs destroy $dataset$username
+  rmdir $location$username
   
   #Update list of all jails
   sed -i '' '/'$username'/ d' $list
