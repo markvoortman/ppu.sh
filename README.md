@@ -33,10 +33,10 @@ List of all jails created using this script (default: /usr/jails/jaillist.txt)
 List of all actions taken on the jail using this script (default: /usr/jails/jaillist.txt)
 
 ```
-./ppu.sh password [username] (not yet implemented)
+./ppu.sh password [username]
 ```
 
-Reset the password for a jail to a random 16 character string.
+Reset the password for a jail to a random 8 character string. User must manually change on login.
 
 ```
 ./ppu.sh jailtest
@@ -47,7 +47,7 @@ Create a jail with a random 16 character string and immediately delete a jail. F
 ## Configuration File
 
 ```
-dataset=[zpool]/jails
+dataset=[tank]/jails
 ```
 
 Location of the dataset that will house the jails. [datapool] is the name of the datapool that will contain said dataset.
