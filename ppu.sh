@@ -103,6 +103,12 @@ jailtest() {
   deletejail
 }
 
+password() {
+  password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1) 
+  echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
+  echo Your new password is $password. Don\'t forget it again!
+}
+
 #Create a jail "ppu.sh createjail username"
 if [ $action = "createjail" ]
 	then
@@ -127,4 +133,9 @@ elif [ $action = "log" ]
 elif [ $action = "jailtest" ]
 	then
     jailtest
+
+#Change password for a user to random 16 character string "ppu.sh password username"
+elif [ $action = "password" ]
+	then
+    password
 fi
