@@ -15,6 +15,13 @@ list=$location/jaillist.txt
 log=$location/jaillog.txt
 
 createjail() {
+  #Check if a username is provided; end if not
+  if [ -z $2 ]
+    then
+      echo "5 - No username was provided" 1>&2
+      exit 5
+  fi
+  
   #Check if jails dataset doesn't exist; end if it doesn't
   if [ ! -d "$location" ] 
 		then 
@@ -52,7 +59,7 @@ createjail() {
     check=`grep $ipaddress.$iptest $list || true`    
 		if [ -n "$check" ]
     then	
-			iptest=`expr $iptest + 1` 
+      iptest=`expr $iptest + 1` 
 		else
       ipfind=0	
 		fi
@@ -72,6 +79,13 @@ createjail() {
 }
 
 deletejail() {
+  #Check if a username is provided; end if not
+  if [ -z $2 ]
+    then
+      echo "5 - No username was provided" 1>&2
+      exit 5
+  fi
+  
   #Check if username exists; end if it doesn't
   if [ ! -d "$location/$username" ] 
     then
@@ -98,15 +112,23 @@ deletejail() {
 
 jailtest() {
   username=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1) 
-  echo $username
   createjail
   deletejail
 }
 
 password() {
+  #Check if a username is provided; end if not
+  if [ -z $2 ]
+    then
+      echo "5 - No username was provided" 1>&2
+      exit 5
+  fi
+  
   password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1) 
   echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
+ 	echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who | awk '{print $1}'` >> $log
+  #echo A password change has been requested for your Point Park University server jail. Your new temporary password is: $password. On logging in to your jail manually change your password using the command "passwd". This is an automated message, replies to this address will not be read or received. >> email.txt| mail -s "Jail Password Change Notification" -F $username@pointpark.edu
 }
 
 #Create a jail "ppu.sh createjail username"
@@ -121,13 +143,21 @@ elif [ $action = "deletejail" ]
 
 #List all jails created with script "ppu.sh list"
 elif [ $action = "list" ]
-	then
-		cat /usr/jails/jaillist.txt
+	then 
+    #Print empty if file doesn't exist
+    if [ -f $list ]
+      then
+        cat /usr/jails/jaillist.txt
+    fi
 
 #List all changes to jails as a result of the script "ppu.sh log"
 elif [ $action = "log" ]
 	then
-		cat /usr/jails/jaillog.txt
+    #Print empty if file doesn't exist
+    if [ ! -f $log ]
+      then
+        cat /usr/jails/jaillog.txt
+    fi
 
 #Create a jail for random student; delete the jail "ppu.sh jailtest"
 elif [ $action = "jailtest" ]

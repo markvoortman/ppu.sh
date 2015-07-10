@@ -1,4 +1,5 @@
 dataset=zroot/jails
+location=/usr/jails
 ipstart=167.88.242.51
 ipend=167.88.242.70
-location=/usr/jails
+
