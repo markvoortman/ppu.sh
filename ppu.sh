@@ -214,4 +214,8 @@ elif [ "$action" = "password" ]
 then
   # change password for a user to random 16 character string 'ppu.sh password username'
   password
+
+elif [ "$action" = "buildpkg" ]
+then
+  sudo poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
 fi
