@@ -217,10 +217,10 @@ then
 
 elif [ "$action" = "buildpkg" ]
 then
-  sudo poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
+  poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
 
 elif [ "$action" = "editpkg" ]
 then
-  sudo vi /usr/local/etc/poudriere.d/port-list
+  vi /usr/local/etc/poudriere.d/port-list
 
 fi
