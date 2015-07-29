@@ -217,6 +217,8 @@ then
 
 elif [ "$action" = "buildpkg" ]
 then
+  poudriere jail -u -j freebsd_10-1x64
+  poudriere ports -u -p HEAD
   poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
 
 elif [ "$action" = "editpkg" ]
