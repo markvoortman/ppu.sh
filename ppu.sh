@@ -28,19 +28,19 @@ location=`cat $ppuconf | grep location | sed "s|location=||g"`
 #jailconf=`cat $ppuconf | grep jailconf | sed "s|jailconf=||g"`
 #dnsconf=`cat $ppuconf | grep dnsconf | sed "s|dnsconf=||g"`
 
-# parameters to move?
-jailconf=/usr/local/etc/$username
-dnsconf=/usr/jails/ns1/usr/local/etc/namedb/master/it.pointpark.edu
-
 # script parameters
 action=$1
 username=$2
 list=$location/jaillist.txt
 log=$location/jaillog.txt
 
+# parameters to move?
+jailconf=/usr/local/etc/qjail.conf/$username
+dnsconf=/usr/jails/ns1/usr/local/etc/namedb/master/it.pointpark.edu
+
 # check if qjail is installed
 testvar=`pkg info | grep qjail`
-if [ -z "$testvar"]
+if [ -z "$testvar" ]
   then
     echo "6 - You must install qjail to use ppu.sh. pkg install sysutils/qjail" 1>&2
     exit 6  
@@ -124,8 +124,8 @@ createjail() {
     newserial=${currentdate}00 
   fi
 
-  sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' it.pointpark.edu
-  echo $username.it.pointpark.edu IN A $ipaddress.$iptest >> $dnsconf
+  sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' $dnsconf
+  echo $username IN A $ipaddress.$iptest >> $dnsconf
   
   # log list of all created and active jails 
   echo $username $ipaddress.$iptest $username.it.pointpark.edu >> $list
@@ -179,7 +179,7 @@ deletejail() {
   fi
   
   # get jail IP
-  ip=`cat $list | grep $username | awk '{print $1}'`
+  ip=`cat $list | grep $username | awk '{print $2}'`
   
   # stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
