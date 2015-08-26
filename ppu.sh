@@ -25,12 +25,26 @@ ipaddress=`cat $ppuconf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f1-3`
 iptest=`cat $ppuconf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f4`
 ipend=`cat $ppuconf | grep ipend | sed "s|ipend=||g" | cut -d "." -f4`
 location=`cat $ppuconf | grep location | sed "s|location=||g"`
+#jailconf=`cat $ppuconf | grep jailconf | sed "s|jailconf=||g"`
+#dnsconf=`cat $ppuconf | grep dnsconf | sed "s|dnsconf=||g"`
+
+# parameters to move?
+jailconf=/usr/local/etc/$username
+dnsconf=/usr/jails/ns1/usr/local/etc/namedb/master/it.pointpark.edu
 
 # script parameters
 action=$1
 username=$2
 list=$location/jaillist.txt
 log=$location/jaillog.txt
+
+# check if qjail is installed
+testvar=`pkg info | grep qjail`
+if [ -z "$testvar"]
+  then
+    echo "6 - You must install qjail to use ppu.sh. pkg install sysutils/qjail" 1>&2
+    exit 6  
+fi
 
 createjail() {
   # check if a username is provided; end if not
@@ -86,17 +100,47 @@ createjail() {
   # create a jail with username/password $username and ask to change password on logging in
   qjail create -c -4 $ipaddress.$iptest $username
   
+  # enable sysvipc in jail
+  qjail config -y $username
+      
+  # DNS serial serial parameters
+  currentserial=`cat $dnsconf | grep Serial | sed "s| ||g" | sed "s|;Serial||g"`
+  currentdate=`date +"%Y%m%d"`
+  oldval=`echo $currentserial | cut -c 9-10`
+  olddate=`echo $currentserial | cut -c 1-8`
+
+  # add jail to DNS
+  if [ "$olddate" = "$currentdate" ]
+    then
+      newval=`expr $oldval + 1`
+      echo $newval
+        if [ "$newval" -lt 10 ]
+          then
+            newval=0$newval
+        fi
+      newserial=$currentdate$newval
+  elif [ ! "$olddate" = "$currentdate" ]
+    then
+    newserial=${currentdate}00 
+  fi
+
+  sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' it.pointpark.edu
+  echo $username.it.pointpark.edu IN A $ipaddress.$iptest >> $dnsconf
+  
   # log list of all created and active jails 
-  echo $username $ipaddress.$iptest host$iptest.cmps.pointpark.edu >> $list
+  echo $username $ipaddress.$iptest $username.it.pointpark.edu >> $list
   
   # log action CREATE taken on a jail
-  echo `date +"[%y/%m/%d:%I:%M:%S]"` CREATE $username $ipaddress.$iptest `who | awk '{print $1}'` >> $log
+  echo `date +"[%y/%m/%d:%I:%M:%S]"` CREATE $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
   
   # configure the jail before starting it
   confjail
   
   # start jail
   qjail start $username
+  
+  # remove exec.poststart after start
+  sed -i '' '/'exec.poststart'/ d' $jailconf
 }
 
 confjail() {
@@ -149,6 +193,9 @@ deletejail() {
   
   # log action DELETE action
   echo `date +"[%y/%m/%d:%I:%M:%S]"` DELETE $username $ip `who -m | awk '{print $1}'` >> $log
+  
+  # remove DNS record from conf
+  sed -i '' '/'$username'/ d' $dnsconf
 }
 
 jailtest() {
@@ -168,7 +215,7 @@ password() {
   password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1) 
   echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
-  echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who | awk '{print $action}'` >> $log
+  echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
   #echo A password change has been requested for your Point Park University server jail. Your new temporary password is: $password. On logging in to your jail manually change your password using the command "passwd". This is an automated message, replies to this address will not be read or received. >> email.txt| mail -s "Jail Password Change Notification" -F $username@pointpark.edu
 }
 
@@ -214,4 +261,14 @@ elif [ "$action" = "password" ]
 then
   # change password for a user to random 16 character string 'ppu.sh password username'
   password
+
+elif [ "$action" = "buildpkg" ]
+then
+  poudriere jail -u -j freebsd_10-1x64
+  poudriere ports -u -p HEAD
+  poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
+
+elif [ "$action" = "editpkg" ]
+then
+  vi /usr/local/etc/poudriere.d/port-list
 fi
