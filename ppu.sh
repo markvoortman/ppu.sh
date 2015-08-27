@@ -7,16 +7,16 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
 if [ "$(id -u)" != "0" ]; then
-   echo "This script must be run as root" 1>&2
-   exit 1
+   echo "7 - This script must be run as root" 1>&2
+   exit 7
 fi
 
 # set ppuconf location
 ppuconf=/usr/local/etc/ppu.conf
 if [ ! -f "$ppuconf" ]
 then
-   echo "Configuration not found at $ppuconf" 1>&2
-   exit 1
+   echo "8 - Configuration not found at $ppuconf" 1>&2
+   exit 8
 fi
 
 # parameters from ppu.conf
@@ -109,7 +109,7 @@ createjail() {
   oldval=`echo $currentserial | cut -c 9-10`
   olddate=`echo $currentserial | cut -c 1-8`
 
-  # add jail to DNS
+  # add jail to DNS, increment serial number
   if [ "$olddate" = "$currentdate" ]
     then
       newval=`expr $oldval + 1`
@@ -123,7 +123,6 @@ createjail() {
     then
     newserial=${currentdate}00 
   fi
-
   sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' $dnsconf
   echo $username IN A $ipaddress.$iptest >> $dnsconf
   
@@ -139,7 +138,7 @@ createjail() {
   # start jail
   qjail start $username
   
-  # remove exec.poststart after start
+  # remove exec.poststart after jail start
   sed -i '' '/'exec.poststart'/ d' $jailconf
 }
 
@@ -216,7 +215,7 @@ password() {
   echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
   echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
-  #echo A password change has been requested for your Point Park University server jail. Your new temporary password is: $password. On logging in to your jail manually change your password using the command "passwd". This is an automated message, replies to this address will not be read or received. >> email.txt| mail -s "Jail Password Change Notification" -F $username@pointpark.edu
+  echo A password change has been requested for your Point Park University server jail. Your temporary new password is: $password. On logging in to your jail manually change your password using the command "passwd". This is an automated message. Replies to this address will not be read or received. | mail -s "Point Park University Jail Password Change Notification" -F $username@pointpark.edu
 }
 
 if [ "$action" = "createjail" ]
@@ -264,12 +263,14 @@ then
 
 elif [ "$action" = "buildpkg" ]
 then
+  # build package list
   poudriere jail -u -j freebsd_10-1x64
   poudriere ports -u -p HEAD
   poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
 
 elif [ "$action" = "editpkg" ]
 then
+  # edit package list
   vi /usr/local/etc/poudriere.d/port-list
-
+  
 fi
