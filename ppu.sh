@@ -210,7 +210,7 @@ password() {
   echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
   echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
-  echo A password change has been requested for your Point Park University server jail. Your temporary new password is: $password. On logging in to your jail manually change your password using the command "passwd". This is an automated message. Replies to this address will not be read or received. | mail -s "Point Park University Jail Password Change Notification" -F $username@pointpark.edu
+  echo A password change has been requested for your Point Park University server jail. Your temporary new password is: $password. After logging into your jail manually change your password using the command \'passwd\'. This is an automated message. Replies to this address will not be read or received. | mail -s "Point Park University Jail Password Change Notification" -F $username@pointpark.edu
 }
 
 if [ "$action" = "createjail" ]
