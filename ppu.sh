@@ -7,16 +7,16 @@ SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
 if [ "$(id -u)" != "0" ]; then
-   echo "7 - This script must be run as root" 1>&2
-   exit 7
+  echo "7 - This script must be run as root" 1>&2
+  exit 7
 fi
 
 # set ppuconf location
 ppuconf=/usr/local/etc/ppu.conf
 if [ ! -f "$ppuconf" ]
 then
-   echo "8 - Configuration not found at $ppuconf" 1>&2
-   exit 8
+  echo "8 - Configuration not found at $ppuconf" 1>&2
+  exit 8
 fi
 
 # parameters from ppu.conf
@@ -25,25 +25,21 @@ ipaddress=`cat $ppuconf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f1-3`
 iptest=`cat $ppuconf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f4`
 ipend=`cat $ppuconf | grep ipend | sed "s|ipend=||g" | cut -d "." -f4`
 location=`cat $ppuconf | grep location | sed "s|location=||g"`
-#jailconf=`cat $ppuconf | grep jailconf | sed "s|jailconf=||g"`
-#dnsconf=`cat $ppuconf | grep dnsconf | sed "s|dnsconf=||g"`
 
 # script parameters
 action=$1
 username=$2
 list=$location/jaillist.txt
 log=$location/jaillog.txt
-
-# parameters to move?
-jailconf=/usr/local/etc/qjail.conf/$username
+jailconf=/usr/local/etc/qjail.config/$username
 dnsconf=/usr/jails/ns1/usr/local/etc/namedb/master/it.pointpark.edu
 
 # check if qjail is installed
 testvar=`pkg info | grep qjail`
 if [ -z "$testvar" ]
-  then
-    echo "6 - You must install qjail to use ppu.sh. pkg install sysutils/qjail" 1>&2
-    exit 6  
+then
+  echo "6 - You must install qjail to use ppu.sh. pkg install sysutils/qjail" 1>&2
+  exit 6
 fi
 
 createjail() {
@@ -56,7 +52,7 @@ createjail() {
   
   # check if jails dataset doesn't exist; end if it doesn't
   if [ ! -d "$location" ]
-  then 
+  then
     echo "1 - The jails dataset does not exist" 1>&2
     exit 1
   fi
@@ -80,20 +76,20 @@ createjail() {
   zfs set mountpoint=$location/$username $dataset/$username
   ipfind=1
   
-  # check each IP in log file, exit if at end value, make new jail for unused value 
-  while [ $ipfind -eq 1 ]
-  do 
-    if [ $ipend = $iptest ]
+  # check each IP in log file, exit if at end value, make new jail for unused value
+  while [ "$ipfind" -eq 1 ]
+  do
+    if [ "$iptest" -gt "$ipend" ]
     then
       echo "4 - Jail not created; IP end range reached." 1>&2
       exit 4
     fi
-    check=`grep $ipaddress.$iptest $list || true`    
+    check=`grep $ipaddress.$iptest $list || true`
     if [ -n "$check" ]
     then
-      iptest=`expr $iptest + 1` 
+      iptest=`expr $iptest + 1`
     else
-      ipfind=0	
+      ipfind=0
     fi
   done
   
@@ -102,31 +98,30 @@ createjail() {
   
   # enable sysvipc in jail
   qjail config -y $username
-      
+  
   # DNS serial serial parameters
   currentserial=`cat $dnsconf | grep Serial | sed "s| ||g" | sed "s|;Serial||g"`
   currentdate=`date +"%Y%m%d"`
   oldval=`echo $currentserial | cut -c 9-10`
   olddate=`echo $currentserial | cut -c 1-8`
-
+  
   # add jail to DNS, increment serial number
   if [ "$olddate" = "$currentdate" ]
+  then
+    newval=`expr $oldval + 1`
+    if [ "$newval" -lt 10 ]
     then
-      newval=`expr $oldval + 1`
-      echo $newval
-        if [ "$newval" -lt 10 ]
-          then
-            newval=0$newval
-        fi
-      newserial=$currentdate$newval
+      newval=0$newval
+    fi
+    newserial=$currentdate$newval
   elif [ ! "$olddate" = "$currentdate" ]
-    then
-    newserial=${currentdate}00 
+  then
+    newserial=${currentdate}00
   fi
   sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' $dnsconf
   echo $username IN A $ipaddress.$iptest >> $dnsconf
   
-  # log list of all created and active jails 
+  # log list of all created and active jails
   echo $username $ipaddress.$iptest $username.it.pointpark.edu >> $list
   
   # log action CREATE taken on a jail
@@ -173,7 +168,7 @@ deletejail() {
   # check if username exists; end if it doesn't
   if [ ! -d "$location/$username" ]
   then
-    echo "3 - $username does not exist" 1>&2 
+    echo "3 - $username does not exist" 1>&2
     exit 3
   fi
   
@@ -184,7 +179,7 @@ deletejail() {
   qjail stop $username
   qjail delete $username
   zfs unmount -f $location/$username
-  zfs destroy $dataset/$username
+  zfs destroy -r $dataset/$username
   rmdir $location/$username
   
   # update list of all jails
@@ -198,7 +193,7 @@ deletejail() {
 }
 
 jailtest() {
-  username=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1) 
+  username=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
   createjail
   deletejail
 }
@@ -211,7 +206,7 @@ password() {
     exit 5
   fi
   
-  password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1) 
+  password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
   echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
   echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
@@ -222,12 +217,12 @@ if [ "$action" = "createjail" ]
 then
   # create a jail 'ppu.sh createjail username'
   createjail
-
+  
 elif [ "$action" = "confjail" ]
 then
   # configuure a jail 'ppu.sh confjail username'
   confjail
-
+  
 elif [ "$action" = "deletejail" ]
 then
   # remove a jail 'ppu.sh deletejail username'
@@ -260,14 +255,14 @@ elif [ "$action" = "password" ]
 then
   # change password for a user to random 16 character string 'ppu.sh password username'
   password
-
+  
 elif [ "$action" = "buildpkg" ]
 then
   # build package list
   poudriere jail -u -j freebsd_10-1x64
   poudriere ports -u -p HEAD
   poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
-
+  
 elif [ "$action" = "editpkg" ]
 then
   # edit package list
