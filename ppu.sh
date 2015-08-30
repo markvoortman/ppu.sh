@@ -25,6 +25,8 @@ ipaddress=`cat $ppuconf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f1-3`
 iptest=`cat $ppuconf | grep ipstart | sed "s|ipstart=||g" | cut -d "." -f4`
 ipend=`cat $ppuconf | grep ipend | sed "s|ipend=||g" | cut -d "." -f4`
 location=`cat $ppuconf | grep location | sed "s|location=||g"`
+backupds=`cat $ppuconf | grep backupds | sed "s|backupds=||g"`
+backuphost=`cat $ppuconf | grep backuphost | sed "s|backuphost=||g"`
 
 # script parameters
 action=$1
@@ -213,6 +215,74 @@ password() {
   echo A password change has been requested for your Point Park University server jail. Your temporary new password is: $password. After logging into your jail manually change your password using the command \'passwd\'. This is an automated message. Replies to this address will not be read or received. | mail -s "Point Park University Jail Password Change Notification" -F $username@pointpark.edu
 }
 
+snapshot() {
+  # check parameter
+  if [ "$dataset" = "" ]
+  then
+    echo "Dataset must be specified" 1>&2
+    exit 99
+  fi
+  # make snapshot
+  zfs snapshot -r $dataset@`date +%Y-%m-%d-%H-%M`
+}
+
+backup_one() {
+  src=$1
+  dst=`echo $src | sed 's|'$backupsrc'|'$backupdst'|'`
+  snapshots=`zfs list -r -d 1 -t snapshot -o name -s name $src`
+  firstsnapshot=`echo $snapshots | cut -d " " -f2`
+  lastsnapshot=`echo $snapshots | rev | cut -d " " -f1 | rev`
+  remotesnapshots=`ssh $backupdsthost sudo zfs list -r -d 1 -t snapshot -o name -s name $dst || true`
+  if [ "$remotesnapshots" = "no datasets available" ] || [ "$remotesnapshots" = "" ]
+  then
+    zfs send $firstsnapshot | ssh $backupdsthost sudo zfs receive -F $dst
+    remotesnapshots=`ssh $backupdsthost sudo zfs list -r -d 1 -t snapshot -o name -s name $dst || true`
+  fi
+  lastremotesnapshot=`echo $remotesnapshots | rev | cut -d " " -f1 | rev`
+  fromsnapshot=`echo $lastremotesnapshot | sed 's|'$backupdst'|'$backupsrc'|'`
+  if [ "$fromsnapshot" != "$lastsnapshot" ]
+  then
+    zfs send -I $fromsnapshot $lastsnapshot | ssh $backupdsthost sudo zfs receive -F $dst
+  fi
+}
+
+backup() {
+  # get parameters
+  backupsrc=$dataset
+  backupdst=$backupds
+  backupdsthost=$backuphost
+  # check parameters
+  if [ "$backupsrc" = "" ]
+  then
+    echo "Backupsrc must be specified" 1>&2
+    exit 99
+  fi
+  if [ "$backupdst" = "" ]
+  then
+    echo "Backupdst must be specified" 1>&2
+    exit 99
+  fi
+  if [ "$backupdsthost" = "" ]
+  then
+    echo "Backupdsthost must be specified" 1>&2
+    exit 99
+  fi
+  # run backup
+  datasets=`zfs list -r -o name -s name $backupsrc`
+  for tmpdataset in $datasets
+  do
+    if [ "$tmpdataset" != "NAME" ]
+    then
+      backup_one $tmpdataset
+    fi
+  done
+}
+
+cron() {
+  snapshot
+  backup
+}
+
 if [ "$action" = "createjail" ]
 then
   # create a jail 'ppu.sh createjail username'
@@ -267,5 +337,18 @@ elif [ "$action" = "editpkg" ]
 then
   # edit package list
   vi /usr/local/etc/poudriere.d/port-list
+  
+elif [ "$action" = "snapshot" ]
+then
+  snapshot
+  
+elif [ "$action" = "backup" ]
+then
+  backup
+  
+elif [ "$action" = "cron" ]
+then
+  # hourly cron job
+  cron
   
 fi
