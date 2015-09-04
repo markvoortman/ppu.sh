@@ -218,6 +218,18 @@ password() {
   echo A password change has been requested for your Point Park University server jail. Your temporary new password is: $password. After logging into your jail manually change your password using the command \'passwd\'. This is an automated message. Replies to this address will not be read or received. | mail -s "Point Park University Jail Password Change Notification" -F $username@pointpark.edu
 }
 
+buildpkg() {
+  # build package list
+  poudriere jail -u -j freebsd_10-1x64
+  poudriere ports -u -p HEAD
+  poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
+}
+
+editpkg() {
+  # edit package list
+  vi /usr/local/etc/poudriere.d/port-list
+}
+
 snapshot() {
   # check parameter
   if [ "$dataset" = "" ]
@@ -282,8 +294,19 @@ backup() {
 }
 
 cron() {
+  # hourly cron job
+  runpkg="no"
+  hour=`date +"%H"`
+  if [ "$hour" = "03" ]
+  then
+    runpkg="yes"
+  fi
   snapshot
   backup
+  if [ "$runpkg" = "yes" ]
+  then
+    buildpkg
+  fi
 }
 
 if [ "$action" = "createjail" ]
@@ -331,15 +354,11 @@ then
   
 elif [ "$action" = "buildpkg" ]
 then
-  # build package list
-  poudriere jail -u -j freebsd_10-1x64
-  poudriere ports -u -p HEAD
-  poudriere bulk -j freebsd_10-1x64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
+  buildpkg
   
 elif [ "$action" = "editpkg" ]
 then
-  # edit package list
-  vi /usr/local/etc/poudriere.d/port-list
+  editpkg
   
 elif [ "$action" = "snapshot" ]
 then
@@ -351,7 +370,6 @@ then
   
 elif [ "$action" = "cron" ]
 then
-  # hourly cron job
   cron
   
 fi
