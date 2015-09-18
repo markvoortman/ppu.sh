@@ -126,6 +126,9 @@ createjail() {
   sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' $dnsconf
   echo $username IN A $ipaddress.$iptest >> $dnsconf
   
+  # restart dns server
+  jexec ns1 service named restart
+  
   # log list of all created and active jails
   echo $username $ipaddress.$iptest $username.it.pointpark.edu >> $list
   
