@@ -148,6 +148,9 @@ confjail() {
   poudrierecert=/usr/local/etc/ssl/certs/poudriere.cert
   if [ -f "$poudrierecert" ]
   then
+    # copy pkg.conf
+    cp -f /usr/local/etc/pkg.conf /usr/jails/$username/usr/local/etc/
+    
     # install poudriere certificate if it exists
     usernamecertsdir=/usr/jails/$username/usr/local/etc/ssl/certs
     mkdir -p $usernamecertsdir
@@ -230,6 +233,19 @@ editpkg() {
   vi /usr/local/etc/poudriere.d/port-list
 }
 
+updatepkg() {
+  # update local system
+  /usr/local/sbin/pkg update
+  /usr/local/sbin/pkg upgrade -y
+  # update jails
+  while read line
+  do
+    name=`echo $line | cut -d " " -f1`
+    /usr/sbin/jexec $name /usr/local/sbin/pkg update
+    /usr/sbin/jexec $name /usr/local/sbin/pkg upgrade -y
+  done < $list
+}
+
 snapshot() {
   # check parameter
   if [ "$dataset" = "" ]
@@ -295,18 +311,36 @@ backup() {
 
 cron() {
   # hourly cron job
-  runpkg="no"
+  onceaday="no"
   hour=`date +"%H"`
   if [ "$hour" = "03" ]
   then
-    runpkg="yes"
+    onceaday="yes"
   fi
-  snapshot
-  backup
-  if [ "$runpkg" = "yes" ]
+  host=`hostname`
+  if [ "$host" = "host1.it.pointpark.edu" ]
   then
-    buildpkg
+    snapshot
+    backup
+    if [ "$onceaday" = "yes" ]
+    then
+      buildpkg
+    fi
   fi
+  if [ "$onceaday" = "yes" ]
+  then
+    updatepkg
+  fi
+}
+
+all() {
+  script=$1
+  while read line
+  do
+    name=`echo $line | cut -d " " -f1`
+    username=$name
+    $script
+  done < $list
 }
 
 if [ "$action" = "createjail" ]
@@ -360,6 +394,10 @@ elif [ "$action" = "editpkg" ]
 then
   editpkg
   
+elif [ "$action" = "updatepkg" ]
+then
+  updatepkg
+  
 elif [ "$action" = "snapshot" ]
 then
   snapshot
@@ -371,5 +409,10 @@ then
 elif [ "$action" = "cron" ]
 then
   cron
+  
+elif [ "$action" = "all" ]
+then
+  # username is the name of the script that should be run on all jails
+  all $username
   
 fi
