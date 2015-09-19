@@ -28,6 +28,18 @@ location=`cat $ppuconf | grep location | sed "s|location=||g"`
 backupds=`cat $ppuconf | grep backupds | sed "s|backupds=||g"`
 backuphost=`cat $ppuconf | grep backuphost | sed "s|backuphost=||g"`
 
+if [ "$dataset" = "" ]
+then
+  echo "Error: dataset not provided in configuration" 1>&2
+  exit 99
+fi
+
+if [ "$location" = "" ]
+then
+  echo "Error: location not provided in configuration" 1>&2
+  exit 99
+fi
+
 # script parameters
 action=$1
 username=$2
@@ -241,12 +253,15 @@ updatepkg() {
   /usr/local/sbin/pkg update
   /usr/local/sbin/pkg upgrade -y
   # update jails
-  while read line
-  do
-    name=`echo $line | cut -d " " -f1`
-    /usr/sbin/jexec $name /usr/local/sbin/pkg update
-    /usr/sbin/jexec $name /usr/local/sbin/pkg upgrade -y
-  done < $list
+  if [ -f "$list" ]
+  then
+    while read line
+    do
+      name=`echo $line | cut -d " " -f1`
+      /usr/sbin/jexec $name /usr/local/sbin/pkg update
+      /usr/sbin/jexec $name /usr/local/sbin/pkg upgrade -y
+    done < $list
+  fi
 }
 
 snapshot() {
