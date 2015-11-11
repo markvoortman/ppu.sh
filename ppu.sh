@@ -116,6 +116,9 @@ createjail() {
   # enable raw sockets jail
   qjail config -k $username
   
+  # set ruleset for jail
+  qjail config -b 13 $username
+  
   # DNS serial serial parameters
   currentserial=`cat $dnsconf | grep Serial | sed "s| ||g" | sed "s|;Serial||g"`
   currentdate=`date +"%Y%m%d"`
