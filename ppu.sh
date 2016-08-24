@@ -158,6 +158,9 @@ createjail() {
   
   # remove exec.poststart after jail start
   sed -i '' '/'exec.poststart'/ d' $jailconf
+  
+  # bootstrap pkg
+  jexec $username env ASSUME_ALWAYS_YES=YES pkg bootstrap
 }
 
 confjail() {
