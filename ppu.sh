@@ -85,12 +85,8 @@ createjail() {
     exit 4
   fi
   
-  # create dataset for each username/jail; mount to jails location
-  zfs create $dataset/$username
-  zfs set mountpoint=$location/$username $dataset/$username
-  ipfind=1
-  
   # check each IP in log file, exit if at end value, make new jail for unused value
+  ipfind=1
   while [ "$ipfind" -eq 1 ]
   do
     if [ "$iptest" -gt "$ipend" ]
@@ -106,6 +102,10 @@ createjail() {
       ipfind=0
     fi
   done
+  
+  # create dataset for each username/jail; mount to jails location
+  zfs create $dataset/$username
+  zfs set mountpoint=$location/$username $dataset/$username
   
   # create a jail with username/password $username and ask to change password on logging in
   qjail create -c -4 $ipaddress.$iptest $username
