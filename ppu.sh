@@ -161,6 +161,10 @@ createjail() {
   
   # bootstrap pkg
   jexec $username env ASSUME_ALWAYS_YES=YES pkg bootstrap
+  
+  # replace deprecated lines inserted by qjail in periodic.conf (temporary workaround)
+  sed -i '' 's/.*daily_status_security_ipfwlimit_enable="NO".*/security_status_ipfwlimit_enable="NO"/' $location/$username/etc/periodic.conf
+  sed -i '' 's/.*daily_status_security_ipfwdenied_enable="NO".*/security_status_ipfwdenied_enable="NO"/' $location/$username/etc/periodic.conf
 }
 
 confjail() {
@@ -362,8 +366,7 @@ all() {
   while read line
   do
     name=`echo $line | cut -d " " -f1`
-    username=$name
-    $script
+    $script $name
   done < $list
 }
 
