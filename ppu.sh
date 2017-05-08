@@ -46,7 +46,7 @@ username=$2
 list=$location/jaillist.txt
 log=$location/jaillog.txt
 jailconf=/usr/local/etc/qjail.config/$username
-dnsconf=/usr/jails/ns1/usr/local/etc/namedb/master/it.pointpark.edu
+dnsconf=$location/ns1/usr/local/etc/namedb/master/it.pointpark.edu
 
 # check if qjail is installed
 testvar=`pkg info | grep qjail`
@@ -161,29 +161,29 @@ createjail() {
   
   # bootstrap pkg
   jexec $username env ASSUME_ALWAYS_YES=YES pkg bootstrap
-  
-  # replace deprecated lines inserted by qjail in periodic.conf (temporary workaround)
-  sed -i '' 's/.*daily_status_security_ipfwlimit_enable="NO".*/security_status_ipfwlimit_enable="NO"/' $location/$username/etc/periodic.conf
-  sed -i '' 's/.*daily_status_security_ipfwdenied_enable="NO".*/security_status_ipfwdenied_enable="NO"/' $location/$username/etc/periodic.conf
 }
 
 confjail() {
   # configure jail
   
+  # copy in periodic.conf
+  cp -f /etc/periodicjail.conf $location/$username/etc/periodic.conf
+  
+  # configure poudriere
   poudrierecert=/usr/local/etc/ssl/certs/poudriere.cert
   if [ -f "$poudrierecert" ]
   then
     # copy pkg.conf
-    cp -f /usr/local/etc/pkg.conf /usr/jails/$username/usr/local/etc/
+    cp -f /usr/local/etc/pkg.conf $location/$username/usr/local/etc/
     
     # install poudriere certificate if it exists
-    usernamecertsdir=/usr/jails/$username/usr/local/etc/ssl/certs
+    usernamecertsdir=$location/$username/usr/local/etc/ssl/certs
     mkdir -p $usernamecertsdir
     cp -f $poudrierecert $usernamecertsdir/
     
     # configure pkg to use the poudriere repository
     poudriererepodir=/usr/local/etc/pkg/repos
-    usernamerepodir=/usr/jails/$username/usr/local/etc/pkg/repos
+    usernamerepodir=$location/$username/usr/local/etc/pkg/repos
     mkdir -p $usernamerepodir
     cp -f $poudriererepodir/freebsd.conf $usernamerepodir/
     cp -f $poudriererepodir/poudriere.conf $usernamerepodir/
@@ -240,7 +240,7 @@ password() {
   fi
   
   password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
-  echo $password | pw -V /usr/jails/$username/etc usermod $username -h 0
+  echo $password | pw -V $location/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
   echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
   echo A password change has been requested for your Point Park University server jail. Your temporary new password is: $password. After logging into your jail manually change your password using the command \'passwd\'. This is an automated message. Replies to this address will not be read or received. | mail -s "Point Park University Jail Password Change Notification" -F $username@pointpark.edu
