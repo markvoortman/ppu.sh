@@ -350,14 +350,20 @@ cron() {
   then
     snapshot
     backup
-    if [ "$onceaday" = "yes" ]
-    then
-      buildpkg
-    fi
   fi
   if [ "$onceaday" = "yes" ]
   then
+    # sleep a random duration to spread the load
+    sleep `jot -r 1 100 3600`
+    # update packages
     updatepkg
+    if [ "$host" = "host1.it.pointpark.edu" ]
+    then
+      # sleep 12 hours and build for the next cycle
+      sleep 43200
+      # build packages
+      buildpkg
+    fi
   fi
 }
 
