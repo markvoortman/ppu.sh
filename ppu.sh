@@ -349,7 +349,6 @@ cron() {
   if [ "$host" = "host1.it.pointpark.edu" ]
   then
     snapshot
-    backup
   fi
   if [ "$onceaday" = "yes" ]
   then
@@ -359,6 +358,8 @@ cron() {
     updatepkg
     if [ "$host" = "host1.it.pointpark.edu" ]
     then
+      # backup once a day
+      backup
       # sleep 12 hours and build for the next cycle
       sleep 43200
       # build packages
