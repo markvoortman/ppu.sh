@@ -94,7 +94,7 @@ createjail() {
       echo "4 - Jail not created; IP end range reached." 1>&2
       exit 4
     fi
-    check=`grep $ipaddress.$iptest $list || true`
+    check=`grep "$ipaddress.$iptest " $list || true`
     if [ -n "$check" ]
     then
       iptest=`expr $iptest + 1`
