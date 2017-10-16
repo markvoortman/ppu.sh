@@ -147,7 +147,7 @@ createjail() {
   # log list of all created and active jails
   echo $username $ipaddress.$iptest $username.it.pointpark.edu >> $list
   
-  # log action CREATE taken on a jail
+  # log CREATE taken on a jail
   echo `date +"[%y/%m/%d:%I:%M:%S]"` CREATE $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
   
   # configure the jail before starting it
@@ -218,8 +218,44 @@ deletejail() {
   # update list of all jails
   sed -i '' '/'$username'/ d' $list
   
-  # log action DELETE action
+  # log DELETE action
   echo `date +"[%y/%m/%d:%I:%M:%S]"` DELETE $username $ip `who -m | awk '{print $1}'` >> $log
+  
+  # remove DNS record from conf
+  sed -i '' '/'$username'/ d' $dnsconf
+}
+
+archivejail() {
+  # check if a username is provided; end if not
+  if [ -z "$username" ]
+  then
+    echo "5 - No username was provided" 1>&2
+    exit 5
+  fi
+  
+  # check if username exists; end if it doesn't
+  if [ ! -d "$location/$username" ]
+  then
+    echo "3 - $username does not exist" 1>&2
+    exit 3
+  fi
+  
+  # get jail IP
+  ip=`cat $list | grep $username | awk '{print $2}'`
+  
+  # stop jail, remove it, unmount dataset, remove it, remove remaining directory
+  qjail stop $username
+  qjail delete $username
+  # do not remove historical snapshots
+  #zfs unmount -f $location/$username
+  #zfs destroy -r $dataset/$username
+  #rmdir $location/$username
+  
+  # update list of all jails
+  sed -i '' '/'$username'/ d' $list
+  
+  # log ARCHIV action
+  echo `date +"[%y/%m/%d:%I:%M:%S]"` ARCHIV $username $ip `who -m | awk '{print $1}'` >> $log
   
   # remove DNS record from conf
   sed -i '' '/'$username'/ d' $dnsconf
@@ -391,6 +427,11 @@ elif [ "$action" = "deletejail" ]
 then
   # remove a jail 'ppu.sh deletejail username'
   deletejail
+  
+elif [ "$action" = "archivejail" ]
+then
+  # archive a jail 'ppu.sh archivejail username'
+  archivejail
   
 elif [ "$action" = "list" ]
 then
