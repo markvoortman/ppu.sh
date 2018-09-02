@@ -1,6 +1,8 @@
 # ppu.sh
 Created by: Faiz Ali
 ali.faiz019@gmail.com
+Maintained by: Mark Voortman
+mvoortman@pointpark.edu
 
 ## Functionality 
 
