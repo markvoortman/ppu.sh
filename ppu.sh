@@ -264,12 +264,6 @@ archivejail() {
   fi
 }
 
-jailtest() {
-  username=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 16 | head -n 1)
-  createjail
-  deletejail
-}
-
 password() {
   # check if a username is provided; end if not
   if [ -z "$username" ]
@@ -453,11 +447,6 @@ then
   then
     cat $log
   fi
-  
-elif [ "$action" = "jailtest" ]
-then
-  # create a jail for random student; delete the jail 'ppu.sh jailtest'
-  jailtest
   
 elif [ "$action" = "password" ]
 then
