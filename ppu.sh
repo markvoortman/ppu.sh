@@ -378,17 +378,15 @@ cron() {
   then
     onceaday="yes"
   fi
-  host=`hostname`
-  if [ "$host" = "host1.it.pointpark.edu" ]
-  then
-    snapshot
-  fi
+  # make snapshot
+  snapshot
   if [ "$onceaday" = "yes" ]
   then
     # sleep a random duration to spread the load
     sleep `jot -r 1 100 3600`
     # update packages
     updatepkg
+    host=`hostname`
     if [ "$host" = "host1.it.pointpark.edu" ]
     then
       # backup once a day
