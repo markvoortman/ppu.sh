@@ -119,30 +119,33 @@ createjail() {
   # set ruleset for jail
   qjail config -b 13 $username
   
-  # DNS serial serial parameters
-  currentserial=`cat $dnsconf | grep Serial | sed "s| ||g" | sed "s|;Serial||g"`
-  currentdate=`date +"%Y%m%d"`
-  oldval=`echo $currentserial | cut -c 9-10`
-  olddate=`echo $currentserial | cut -c 1-8`
-  
-  # add jail to DNS, increment serial number
-  if [ "$olddate" = "$currentdate" ]
+  if [ "$host" = "host1.it.pointpark.edu" ]
   then
-    newval=`expr $oldval + 1`
-    if [ "$newval" -lt 10 ]
+    # DNS serial serial parameters
+    currentserial=`cat $dnsconf | grep Serial | sed "s| ||g" | sed "s|;Serial||g"`
+    currentdate=`date +"%Y%m%d"`
+    oldval=`echo $currentserial | cut -c 9-10`
+    olddate=`echo $currentserial | cut -c 1-8`
+    
+    # add jail to DNS, increment serial number
+    if [ "$olddate" = "$currentdate" ]
     then
-      newval=0$newval
+      newval=`expr $oldval + 1`
+      if [ "$newval" -lt 10 ]
+      then
+        newval=0$newval
+      fi
+      newserial=$currentdate$newval
+    elif [ ! "$olddate" = "$currentdate" ]
+    then
+      newserial=${currentdate}00
     fi
-    newserial=$currentdate$newval
-  elif [ ! "$olddate" = "$currentdate" ]
-  then
-    newserial=${currentdate}00
+    sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' $dnsconf
+    echo $username IN A $ipaddress.$iptest >> $dnsconf
+    
+    # restart dns server
+    jexec ns1 service named restart
   fi
-  sed -i '' 's/.*Serial.*/'$newserial' \; Serial/' $dnsconf
-  echo $username IN A $ipaddress.$iptest >> $dnsconf
-  
-  # restart dns server
-  jexec ns1 service named restart
   
   # log list of all created and active jails
   echo $username $ipaddress.$iptest $username.it.pointpark.edu >> $list
@@ -221,8 +224,11 @@ deletejail() {
   # log DELETE action
   echo `date +"[%y/%m/%d:%I:%M:%S]"` DELETE $username $ip `who -m | awk '{print $1}'` >> $log
   
-  # remove DNS record from conf
-  sed -i '' '/'$username'/ d' $dnsconf
+  if [ "$host" = "host1.it.pointpark.edu" ]
+  then
+    # remove DNS record from conf
+    sed -i '' '/'$username'/ d' $dnsconf
+  fi
 }
 
 archivejail() {
@@ -257,8 +263,11 @@ archivejail() {
   # log ARCHIV action
   echo `date +"[%y/%m/%d:%I:%M:%S]"` ARCHIV $username $ip `who -m | awk '{print $1}'` >> $log
   
-  # remove DNS record from conf
-  sed -i '' '/'$username'/ d' $dnsconf
+  if [ "$host" = "host1.it.pointpark.edu" ]
+  then
+    # remove DNS record from conf
+    sed -i '' '/'$username'/ d' $dnsconf
+  fi
 }
 
 jailtest() {
@@ -285,8 +294,8 @@ password() {
 buildpkg() {
   # build package list
   /usr/local/bin/poudriere jail -u -j 104amd64
-  /usr/local/bin/poudriere ports -u -p HEAD
-  /usr/local/bin/poudriere bulk -j 104amd64 -p HEAD -f /usr/local/etc/poudriere.d/port-list
+  /usr/local/bin/poudriere ports -u -p quarterly
+  /usr/local/bin/poudriere bulk -j 104amd64 -p quarterly -f /usr/local/etc/poudriere.d/port-list
 }
 
 editpkg() {
