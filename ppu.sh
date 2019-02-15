@@ -78,17 +78,11 @@ createjail() {
     exit 2
   fi
   
-  # check if at end of IP usable range
-  if [ $ipend = $iptest ]
-  then
-    echo "4 - Jail not created; IP end range reached." 1>&2
-    exit 4
-  fi
-  
   # check each IP in log file, exit if at end value, make new jail for unused value
   ipfind=1
   while [ "$ipfind" -eq 1 ]
   do
+    # check if at end of IP usable range
     if [ "$iptest" -gt "$ipend" ]
     then
       echo "4 - Jail not created; IP end range reached." 1>&2
