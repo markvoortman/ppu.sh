@@ -401,11 +401,18 @@ cron() {
 
 all() {
   script=$1
+  NAMES=
+  
   while read line
   do
     name=`echo $line | cut -d " " -f1`
-    $script $name
+    NAMES="$NAMES $name"
   done < $list
+  
+  for name in $NAMES
+  do
+    $script $name
+  done
 }
 
 if [ "$action" = "createjail" ]
