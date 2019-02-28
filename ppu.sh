@@ -167,6 +167,7 @@ confjail() {
   sed -i '' 's/.*periodic daily/1	3	*	*	*	root	sleep `jot -r 1 100 3600`; periodic daily/' $location/$username/etc/crontab
   sed -i '' 's/.*periodic weekly/15	4	*	*	6	root	sleep `jot -r 1 100 3600`; periodic weekly/' $location/$username/etc/crontab
   sed -i '' 's/.*periodic monthly/30	5	1	*	*	root	sleep `jot -r 1 100 3600`; periodic monthly/' $location/$username/etc/crontab
+  sed -i '' 's/.*adjkerntz -a/#1,31	0-5	*	*	*	root	adjkerntz -a/' $location/$username/etc/crontab
   
   # copy in periodic.conf
   cp -f /etc/periodicjail.conf $location/$username/etc/periodic.conf
