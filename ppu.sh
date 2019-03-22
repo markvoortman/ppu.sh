@@ -46,7 +46,7 @@ username=$2
 list=$location/jaillist.txt
 log=$location/jaillog.txt
 jailconf=/usr/local/etc/qjail.config/$username
-dnsconf=$location/ns1/usr/local/etc/namedb/master/it.pointpark.edu
+dnsconf=/usr/local/etc/namedb/master/it.pointpark.edu
 
 # check if qjail is installed
 testvar=`pkg info | grep qjail`
@@ -138,7 +138,7 @@ createjail() {
     echo $username IN A $ipaddress.$iptest >> $dnsconf
     
     # restart dns server
-    jexec ns1 service named restart
+    service named restart
   fi
   
   # log list of all created and active jails
