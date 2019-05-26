@@ -11,6 +11,9 @@ if [ "$(id -u)" != "0" ]; then
   exit 7
 fi
 
+# set host
+host=`hostname`
+
 # set ppuconf location
 ppuconf=/usr/local/etc/ppu.conf
 if [ ! -f "$ppuconf" ]
@@ -392,7 +395,6 @@ cron() {
     sleep `jot -r 1 100 3600`
     # update packages
     updatepkg
-    host=`hostname`
     if [ "$host" = "host1.it.pointpark.edu" ]
     then
       # backup once a day
