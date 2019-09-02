@@ -60,6 +60,8 @@ then
 fi
 
 createjail() {
+  option=$1
+  
   # check if a username is provided; end if not
   if [ -z "$username" ]
   then
@@ -75,7 +77,7 @@ createjail() {
   fi
   
   # check if username already exists; end if it does
-  if [ -d "$location/$username" ]
+  if [ -d "$location/$username" -a ! $option = "donotcreatedataset" ]
   then
     echo "2 - A jail for $username already exists" 1>&2
     exit 2
@@ -100,9 +102,13 @@ createjail() {
     fi
   done
   
-  # create dataset for each username/jail; mount to jails location
-  zfs create $dataset/$username
-  zfs set mountpoint=$location/$username $dataset/$username
+  if [ ! $option = "donotcreatedataset" ]
+  then
+    # create dataset for each username/jail; mount to jails location
+      zfs create $dataset/$username
+      # set mountpoint
+      zfs set mountpoint=$location/$username $dataset/$username
+  fi
   
   # create a jail with username/password $username and ask to change password on logging in
   qjail create -c -4 $ipaddress.$iptest $username
@@ -271,6 +277,10 @@ archivejail() {
     # remove DNS record from conf
     sed -i '' '/'$username'/ d' $dnsconf
   fi
+}
+
+unarchivejail() {
+  createjail donotcreatedataset
 }
 
 password() {
@@ -442,6 +452,11 @@ elif [ "$action" = "archivejail" ]
 then
   # archive a jail 'ppu.sh archivejail username'
   archivejail
+  
+elif [ "$action" = "unarchivejail" ]
+then
+  # archive a jail 'ppu.sh unarchivejail username'
+  unarchivejail
   
 elif [ "$action" = "list" ]
 then
