@@ -3,6 +3,7 @@
 # quit on any error
 set -e
 
+DEFAULTHOST=host2.it.pointpark.edu
 SCRIPT=$(readlink -f "$0")
 SCRIPTPATH=$(dirname "$SCRIPT")
 
@@ -122,7 +123,7 @@ createjail() {
   # set ruleset for jail
   qjail config -b 13 $username
   
-  if [ "$host" = "host1.it.pointpark.edu" ]
+  if [ "$host" = "$DEFAULTHOST" ]
   then
     # DNS serial serial parameters
     currentserial=`cat $dnsconf | grep Serial | sed "s| ||g" | sed "s|;Serial||g"`
@@ -233,7 +234,7 @@ deletejail() {
   # log DELETE action
   echo `date +"[%y/%m/%d:%I:%M:%S]"` DELETE $username $ip `who -m | awk '{print $1}'` >> $log
   
-  if [ "$host" = "host1.it.pointpark.edu" ]
+  if [ "$host" = "$DEFAULTHOST" ]
   then
     # remove DNS record from conf
     sed -i '' '/'$username'/ d' $dnsconf
@@ -272,7 +273,7 @@ archivejail() {
   # log ARCHIV action
   echo `date +"[%y/%m/%d:%I:%M:%S]"` ARCHIV $username $ip `who -m | awk '{print $1}'` >> $log
   
-  if [ "$host" = "host1.it.pointpark.edu" ]
+  if [ "$host" = "$DEFAULTHOST" ]
   then
     # remove DNS record from conf
     sed -i '' '/'$username'/ d' $dnsconf
