@@ -406,11 +406,11 @@ cron() {
     sleep `jot -r 1 100 3600`
     # update packages
     updatepkg
-    if [ "$host" = "host1.it.pointpark.edu" ]
-    then
-      # backup once a day
-      backup
-    fi
+    #if [ "$host" = "host1.it.pointpark.edu" ]
+    #then
+    #  # backup once a day
+    #  backup
+    #fi
     # sleep 12 hours and build for the next cycle
     sleep 43200
     # build packages
