@@ -224,9 +224,9 @@ deletejail() {
   # stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
   qjail delete $username
-  zfs unmount -f $location/$username
-  zfs destroy -r $dataset/$username
-  rmdir $location/$username
+  zfs unmount -f $location/$username || true
+  zfs destroy -r $dataset/$username || true
+  rmdir $location/$username || true
   
   # update list of all jails
   sed -i '' '/'$username'/ d' $list
@@ -261,7 +261,7 @@ archivejail() {
   
   # stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
-  qjail delete $username
+  qjail archive $username
   # do not remove historical snapshots
   #zfs unmount -f $location/$username
   #zfs destroy -r $dataset/$username
