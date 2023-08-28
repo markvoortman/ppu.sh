@@ -292,7 +292,7 @@ password() {
     exit 5
   fi
   
-  password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
+  password=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-zA-Z0-9' | fold -w 8 | head -n 1)
   echo $password | pw -V $location/$username/etc usermod $username -h 0
   echo Your new password is $password. Don\'t forget it again!
   echo `date +"[%y/%m/%d:%I:%M:%S]"` CNGPWD $username $ipaddress.$iptest `who -m | awk '{print $1}'` >> $log
