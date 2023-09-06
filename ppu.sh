@@ -224,6 +224,9 @@ deletejail() {
   # stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
   qjail delete $username
+  # delete qjail config files
+  rm -f /usr/local/etc/qjail.*/$username
+  # remove historical snapshots
   zfs unmount -f $location/$username || true
   zfs destroy -r $dataset/$username || true
   rmdir $location/$username || true
