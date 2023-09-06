@@ -262,6 +262,8 @@ archivejail() {
   # stop jail, remove it, unmount dataset, remove it, remove remaining directory
   qjail stop $username
   qjail archive $username
+  # delete qjail config files
+  rm -f /usr/local/etc/qjail.*/$username
   # do not remove historical snapshots
   #zfs unmount -f $location/$username
   #zfs destroy -r $dataset/$username
