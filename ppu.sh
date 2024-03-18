@@ -306,9 +306,9 @@ password() {
 
 buildpkg() {
   # build package list
-  /usr/local/bin/poudriere jail -u -j 132amd64
+  /usr/local/bin/poudriere jail -u -j 133amd64
   /usr/local/bin/poudriere ports -u -p quarterly
-  /usr/local/bin/poudriere bulk -j 132amd64 -p quarterly -f /usr/local/etc/poudriere.d/port-list
+  /usr/local/bin/poudriere bulk -j 133amd64 -p quarterly -f /usr/local/etc/poudriere.d/port-list
 }
 
 editpkg() {
